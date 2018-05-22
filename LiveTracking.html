@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bus Tracking</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="/static/js/livetracking.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+        }
+        #map{
+            height: 500px;
+            width: 100%;
+            margin-top: 100px;
+            margin-bottom: 100px;
+        }
+        #wrap {
+            min-height: 100%;
+        }
+
+        #main {
+            overflow:auto;
+            padding-bottom:10px; /* this needs to be bigger than footer height*/
+        }
+        .bg-1 {
+            background-color: #1abc9c; /* Green */
+            color: #ffffff;
+        }
+        .bg-2 {
+            background-color: #474e5d; /* Dark Blue */
+            color: #ffffff;
+            position: relative;
+            margin-top: -100px; /* negative value of footer height */
+            height: 100px;
+            clear:both;
+            padding-top:15px;
+        }
+    </style>
+</head>
+<body>
+<!--    Body Wrapper    -->
+<div id="wrap">
+   <!--    Header    -->
+<div class="container-fluid bg-1 text-center" id="main">
+    <h2 id="title">Simple Bus Tracking</h2>
+</div>
+    <!--    Map    -->
+    <div id="map"></div>
+
+
+</div>
+<!--    Footer    -->
+<div class="container-fluid bg-2 text-center">
+
+    <h2>Link to historical data</h2>
+
+</div>
+<script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=INSERT YOUR API KEY HERE&callback=initMap&libraries=geometry">
+</script>
+</body>
+</html>
