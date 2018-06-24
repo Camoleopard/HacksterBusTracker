@@ -10,13 +10,13 @@ var path = require('path');
 //
 //
 const gcloud = require(`google-cloud`)({
-    projectId: "INSERT YOUR PROJECT ID HERE",
-    keyFilename: "INSRT THE DIRECT LINK TO YOUR KEYFILE HERE"
+    projectId: "INSERT PROJECT ID HERE",
+    keyFilename: "INSERT DIRECT FILEPATH TO KEYFILE JSON HERE"
 });
 //Initialize google datastore
 const datastore = gcloud.datastore({
-    projectId: "INSERT YOUR PROJECT ID HERE",
-    keyFilename: "INSRT THE DIRECT LINK TO YOUR KEYFILE HERE"
+    projectId: "INSERT PROJECT ID HERE",
+    keyFilename: "INSERT DIRECT FILEPATH TO KEYFILE JSON HERE"
 });
 //initialize pub sub
 const pubsub = gcloud.pubsub();
@@ -72,7 +72,7 @@ const messageHandler = message => {
     console.log(`\tData: ${message.data}`);
     console.log(`\tAttributes: ${message.attributes}`);
     console.log(''+ message.data);
-    io.emit('chat message', '\tData: ' + message.data);
+    io.emit('busupdate', '' + message.data);
     storeEvent(message);
 
     // "Ack" (acknowledge receipt of) the message
@@ -102,16 +102,17 @@ function getData(){
     const query = datastore.createQuery('ParticleEvent').order('published_at').limit(20000);
     datastore.runQuery(query).then(results => {
 
-        const event = results[0];
+      const event = results[0];
+        var dataPoints=[];
+
         console.log(results);
         //Emit the data on socket.io to the Historical data
-        io.emit('historical data',results);
+
 
         //Emit the data
-        event.forEach(data => console.log(data.data));
+        event.forEach(data => dataPoints.push(data.data));
+        io.emit('historical data',dataPoints);
     });
 
 
 }
-
-
