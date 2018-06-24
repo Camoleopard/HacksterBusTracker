@@ -1,4 +1,3 @@
-
 var map, socket;
 //Array storing the polylines between datapoints
 var polylinesTemp = new Array();
@@ -18,7 +17,7 @@ function initMap() {
         center: user
     });
     //String template for the infowindow
-    var content = '<div id="content"><h5>Temperature: a1</h5><br><h5>Humidity: a2</h5><br> <h5>Pressure: a3</h5><br><h5>Gas: a4</h5><br><h5>Published at: a5</div>';
+    var content = '<div id="content"><h5>Temperature: a1 C</h5><br><h5>Humidity: a2 %</h5><br> <h5>Pressure: a3 Pa</h5><br><h5>Gas: a4 ppm</h5></div>';
     //Marker icon
     var icon = {
         url: "/static/images/090.png", // url
@@ -31,7 +30,7 @@ function initMap() {
     //Initialize socket.io
     socket = io();
 
-    io.emit('pageload', "Please gimme some data");
+    socket.emit('pageload', "Please gimme some data");
     //Listen for the 'historical data' event to be emitted
     socket.on('historical data', function(data){
         //Prevents data being recieved multiple times
@@ -43,8 +42,9 @@ function initMap() {
             var previousData;
             //For loop iterating through each datapoint
             for (var i = 0; i < data.length; i++) {
+                console.log('data:' + data[i]);
                 //Parse the JSON data transmitted from the tracker
-                var parsedData = JSON.parse(data[i].data);
+                var parsedData = JSON.parse(data[i]);
                 //Check to see if the previous marker variable exists, used for the first datapoint
                 if (typeof previousMarker !== "undefined") {
                     //Initialize a marker
@@ -60,9 +60,12 @@ function initMap() {
                         content: contentUpdate(content, parsedData)
                     });
                     //Listener for click to open the infowindow
-                    marker.addListener('click', function () {
-                        info.open(map, marker);
-                    });
+                    google.maps.event.addListener(marker,'click', (function(marker,content,info){
+                        return function() {
+
+                            info.open(map,marker);
+                        };
+                    })(marker,content,info));
 
                     //Generates PolyLines between points coloured based on their value
                     sensorLines(previousData, parsedData);
@@ -80,12 +83,15 @@ function initMap() {
                     previousMarker = marker;
                     //Create an info window for displaying all data
                     var info = new google.maps.InfoWindow({
-                        content: contentUpdate(content, parsedData, data[i].published_at)
+                        content: contentUpdate(content, parsedData)
                     });
                     //Listener for click to open the infowindow
-                    marker.addListener('click', function () {
-                        info.open(map, marker);
-                    });
+                    google.maps.event.addListener(marker,'click', (function(marker,content,info){
+                        return function() {
+
+                            info.open(map,marker);
+                        };
+                    })(marker,content,info));
                 }
             }
         }
@@ -107,7 +113,7 @@ function contentUpdate(original,parsedData, publishedAt){
     updatedString=updatedString.replace('a2', parsedData.Humidity);
     updatedString=updatedString.replace('a3', parsedData.Pressure);
     updatedString=updatedString.replace('a4', parsedData.Gas);
-    updatedString=updatedString.replace('a5', publishedAt);
+    
 
 
     return updatedString;
@@ -161,8 +167,8 @@ var hsv2rgb = function(h, s, v) {
 };
 //Creates 4 lines given the 2 datapoints, all are hidden except temperature
 function sensorLines(dataA,dataB){
-    var path = [{lat: dataA.lat, long : dataA.long},{lat: dataB.lat,long:dataB.long}]
-    var lineTemp = new google.maps.PolyLine({
+    var path = [new google.maps.LatLng(dataA.lat,dataA.long),new google.maps.LatLng(dataB.lat,dataB.long)];
+    var lineTemp = new google.maps.Polyline({
         path: path,
         strokeWeight: 3,
         strokeOpacity: 1.0
@@ -171,7 +177,7 @@ function sensorLines(dataA,dataB){
     lineTemp.setOptions({strokeColor: PolyLineColours(mapVal(dataB.Temperature, -10, 50,0,100))});
     polylinesTemp.push(lineTemp);
 
-    var linePres = new google.maps.PolyLine({
+    var linePres = new google.maps.Polyline({
         path: path,
         strokeWeight: 3,
         strokeOpacity: 1.0
@@ -179,7 +185,7 @@ function sensorLines(dataA,dataB){
     linePres.setMap(null);
     linePres.setOptions({strokeColor: PolyLineColours(mapVal(dataB.Pressure, 95000,105000,0,100))});
     polylinesPres.push(linePres);
-    var lineHum = new google.maps.PolyLine({
+    var lineHum = new google.maps.Polyline({
         path: path,
         strokeWeight: 3,
         strokeOpacity: 1.0
@@ -187,7 +193,7 @@ function sensorLines(dataA,dataB){
     lineHum.setMap(null);
     lineHum.setOptions({strokeColor: PolyLineColours(dataB.Humidity)});
     polylinesHum.push(lineHum);
-    var lineGas = new google.maps.PolyLine({
+    var lineGas = new google.maps.Polyline({
         path: path,
         strokeWeight: 3,
         strokeOpacity: 1.0
@@ -202,7 +208,9 @@ function sensorLines(dataA,dataB){
 var oldVal = 1;
 //Changes the value line by setting the map of the old value to null and the new one to the current map. Probably not the most efficient way to do this
 //But it works
-function changeLine(newVal){
+function changeLine(val){
+    var newVal = parseInt(val);
+
     switch(oldVal){
         case 1:
             polylinesTemp.forEach(function(line){
@@ -222,46 +230,37 @@ function changeLine(newVal){
         case 4:
             polylinesGas.forEach(function(line){
                 line.setMap(null);
-            })
+            });
+
             break;
-        default:
-            polylinesTemp.forEach(function(line){
-                line.setMap(map);
-            })
-            break;
+
     }
+
+
     switch(newVal){
         case 1:
             polylinesTemp.forEach(function(line){
                 line.setMap(map);
-            })
+            });
             break;
         case 2:
             polylinesHum.forEach(function(line){
                 line.setMap(map);
-            })
+            });
             break;
         case 3:
             polylinesPres.forEach(function(line){
                 line.setMap(map);
-            })
+            });
             break;
         case 4:
             polylinesGas.forEach(function(line){
                 line.setMap(map);
-            })
+            });
             break;
-        default:
-            polylinesTemp.forEach(function(line){
-            line.setMap(map);
-            })
-            break;
+
 
     }
     oldVal = newVal;
 }
-
-
-
-
 
